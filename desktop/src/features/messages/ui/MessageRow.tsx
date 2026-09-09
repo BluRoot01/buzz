@@ -59,8 +59,12 @@ import { SentFromThreadLine } from "./SentFromThreadLine";
 import { WaveMessageAttachment } from "./WaveMessageAttachment";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 import { useMessageAgentAddressPrefix } from "./MessageAgentAddressPrefix";
-import { extractWorkDriveOwnerConfirmation } from "@/shared/lib/ownerConfirmation";
+import {
+  extractCrmOperationalAccessConfirmation,
+  extractWorkDriveOwnerConfirmation,
+} from "@/shared/lib/ownerConfirmation";
 import { WorkDriveOwnerConfirmationCard } from "@/shared/ui/WorkDriveOwnerConfirmationCard";
+import { CrmOperationalAccessConfirmationCard } from "@/shared/ui/CrmOperationalAccessConfirmationCard";
 const DiffMessage = React.lazy(() => import("./DiffMessage"));
 const DiffMessageExpanded = React.lazy(() => import("./DiffMessageExpanded"));
 export type ThreadDepthGuideAction = {
@@ -311,6 +315,12 @@ export const MessageRow = React.memo(
       }
       return payload;
     }, [channelId, message.body]);
+    const crmOperationalAccessConfirmation = React.useMemo(() => {
+      if (!channelId) return null;
+      const payload = extractCrmOperationalAccessConfirmation(message.body);
+      if (!payload || payload.channel_id !== channelId) return null;
+      return payload;
+    }, [channelId, message.body]);
 
     const { nonDmChannelNames: channelNames } = useChannelNavigation();
 
@@ -411,6 +421,15 @@ export const MessageRow = React.memo(
             />
           );
         default: {
+          if (crmOperationalAccessConfirmation && channelId) {
+            return (
+              <CrmOperationalAccessConfirmationCard
+                channelId={channelId}
+                payload={crmOperationalAccessConfirmation}
+                requestEventId={message.id}
+              />
+            );
+          }
           if (workDriveConfirmation && channelId) {
             return (
               <WorkDriveOwnerConfirmationCard
